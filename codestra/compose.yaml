@@ -27,8 +27,12 @@ services:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
       - alertmanager_data:/alertmanager
     secrets:
-      - middleware_alert_webhook_url
-      - middleware_alert_webhook_token
+      - source: middleware_alert_webhook_url
+        target: middleware-alert-webhook-url
+        mode: 0400
+      - source: middleware_alert_webhook_token
+        target: middleware-alert-webhook-token
+        mode: 0400
     networks:
       observability:
         aliases:

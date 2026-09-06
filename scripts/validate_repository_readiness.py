@@ -73,8 +73,14 @@ def main() -> None:
     if manifest.get("productionActivation") is not False:
         fail("configuration manifest must not activate production")
     files = manifest.get("files")
-    if not isinstance(files, dict) or len(files) != 4:
-        fail("configuration manifest must contain exactly four governed files")
+    governed_files = {
+        "codestra/alertmanager.yml",
+        "codestra/alert-routing-policy.json",
+        "codestra/middleware-alert-contract.json",
+        "codestra/api/service-contract.v1.json",
+    }
+    if not isinstance(files, dict) or set(files) != governed_files:
+        fail("configuration manifest must contain exactly the four governed files")
     for relative, expected in files.items():
         path = ROOT / relative
         if not path.is_file() or not SHA256.fullmatch(str(expected)):
