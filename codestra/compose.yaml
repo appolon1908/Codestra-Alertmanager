@@ -33,27 +33,27 @@ services:
         target: middleware-alert-webhook-url
         uid: "65534"
         gid: "65534"
-$3 0400
+        mode: 0400
       - source: middleware_alert_webhook_token
         target: middleware-alert-webhook-token
         uid: "65534"
         gid: "65534"
-$3 0400
+        mode: 0400
       - source: alertmanager_server_cert
         target: alertmanager-server-cert
         uid: "65534"
         gid: "65534"
-$3 0444
+        mode: 0444
       - source: alertmanager_server_key
         target: alertmanager-server-key
         uid: "65534"
         gid: "65534"
-$3 0400
+        mode: 0400
       - source: alertmanager_client_ca
         target: alertmanager-client-ca
         uid: "65534"
         gid: "65534"
-$3 0444
+        mode: 0444
     networks:
       observability:
         aliases:
