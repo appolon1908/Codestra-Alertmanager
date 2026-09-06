@@ -108,6 +108,8 @@ def main() -> None:
         "min_version": "TLS12",
     }:
         fail("Alertmanager native listener must enforce the exact mTLS policy")
+    if compose.count('uid: "65534"') != 5 or compose.count('gid: "65534"') != 5:
+        fail("all Alertmanager secrets must belong to runtime UID/GID 65534")
     for required in (
         "--web.config.file=/etc/alertmanager/web-config.yml",
         "target: alertmanager-server-cert",
