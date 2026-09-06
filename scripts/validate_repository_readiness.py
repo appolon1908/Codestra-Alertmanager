@@ -78,9 +78,10 @@ def main() -> None:
         "codestra/alert-routing-policy.json",
         "codestra/middleware-alert-contract.json",
         "codestra/api/service-contract.v1.json",
+        "codestra/web-config.yml",
     }
     if not isinstance(files, dict) or set(files) != governed_files:
-        fail("configuration manifest must contain exactly the four governed files")
+        fail("configuration manifest must contain exactly the five governed files")
     for relative, expected in files.items():
         path = ROOT / relative
         if not path.is_file() or not SHA256.fullmatch(str(expected)):
@@ -95,6 +96,27 @@ def main() -> None:
     image_lines = re.findall(r"(?m)^\s+image:\s*(\S+)\s*$", compose)
     if image_lines != [lock["image"]]:
         fail("Alertmanager compose image must exactly match the immutable runtime lock")
+    web_config = yaml.safe_load(
+        (ROOT / "codestra/web-config.yml").read_text(encoding="utf-8")
+    )
+    tls = web_config.get("tls_server_config", {})
+    if tls != {
+        "cert_file": "/run/secrets/alertmanager-server-cert",
+        "key_file": "/run/secrets/alertmanager-server-key",
+        "client_ca_file": "/run/secrets/alertmanager-client-ca",
+        "client_auth_type": "RequireAndVerifyClientCert",
+        "min_version": "TLS12",
+    }:
+        fail("Alertmanager native listener must enforce the exact mTLS policy")
+    for required in (
+        "--web.config.file=/etc/alertmanager/web-config.yml",
+        "target: alertmanager-server-cert",
+        "target: alertmanager-server-key",
+        "target: alertmanager-client-ca",
+    ):
+        if required not in compose:
+            fail(f"Alertmanager compose is missing mTLS control: {required}")
+
     config = (ROOT / "codestra/alertmanager.yml").read_text(encoding="utf-8")
     for receiver in (
         "email_configs",
