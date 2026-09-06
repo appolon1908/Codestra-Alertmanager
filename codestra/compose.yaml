@@ -16,6 +16,7 @@ services:
       - --config.file=/etc/alertmanager/alertmanager.yml
       - --storage.path=/alertmanager
       - --web.listen-address=0.0.0.0:9093
+      - --web.config.file=/etc/alertmanager/web-config.yml
       - --web.external-url=${ALERTMANAGER_EXTERNAL_URL:-https://aler.codestra.media/}
       - --cluster.listen-address=
       - --enable-feature=utf8-strict-mode,auto-gomemlimit,receiver-name-in-metrics
@@ -25,6 +26,7 @@ services:
       - "9093"
     volumes:
       - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./web-config.yml:/etc/alertmanager/web-config.yml:ro
       - alertmanager_data:/alertmanager
     secrets:
       - source: middleware_alert_webhook_url
@@ -33,6 +35,15 @@ services:
       - source: middleware_alert_webhook_token
         target: middleware-alert-webhook-token
         mode: 0400
+      - source: alertmanager_server_cert
+        target: alertmanager-server-cert
+        mode: 0444
+      - source: alertmanager_server_key
+        target: alertmanager-server-key
+        mode: 0400
+      - source: alertmanager_client_ca
+        target: alertmanager-client-ca
+        mode: 0444
     networks:
       observability:
         aliases:
@@ -59,3 +70,12 @@ secrets:
   middleware_alert_webhook_token:
     external: true
     name: ${MIDDLEWARE_ALERT_WEBHOOK_TOKEN_SECRET:-codestra-middleware-alert-webhook-token}
+  alertmanager_server_cert:
+    external: true
+    name: ${ALERTMANAGER_SERVER_CERT_SECRET:-codestra-alertmanager-server-cert}
+  alertmanager_server_key:
+    external: true
+    name: ${ALERTMANAGER_SERVER_KEY_SECRET:-codestra-alertmanager-server-key}
+  alertmanager_client_ca:
+    external: true
+    name: ${ALERTMANAGER_CLIENT_CA_SECRET:-codestra-alertmanager-client-ca}
