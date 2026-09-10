@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "suite_id": "codestra-stage6-alert-routing-certification-v1",
+  "status": "SOURCE_TESTS_ONLY_NOT_DEPLOYED",
+  "cases": [
+    {
+      "id": "authentication-failures",
+      "labels": {
+        "alertname": "CodestraAuthenticationFailuresSpike",
+        "severity": "warning",
+        "codestra_business": "codestra",
+        "service": "middleware-api",
+        "environment": "staging",
+        "owner": "codestra-security"
+      },
+      "expected_receiver": "middleware-warning"
+    },
+    {
+      "id": "external-provider-failures",
+      "labels": {
+        "alertname": "CodestraExternalProviderFailures",
+        "severity": "critical",
+        "codestra_business": "codestra",
+        "service": "middleware-api",
+        "environment": "staging",
+        "owner": "codestra-integration"
+      },
+      "expected_receiver": "middleware-critical"
+    },
+    {
+      "id": "queue-backlog",
+      "labels": {
+        "alertname": "CodestraQueueDepthHigh",
+        "severity": "warning",
+        "codestra_business": "codestra",
+        "service": "middleware-api",
+        "environment": "staging",
+        "owner": "codestra-application",
+        "queue": "outbox"
+      },
+      "expected_receiver": "middleware-warning"
+    },
+    {
+      "id": "webhook-retries",
+      "labels": {
+        "alertname": "CodestraWebhookRetriesElevated",
+        "severity": "warning",
+        "codestra_business": "codestra",
+        "service": "middleware-api",
+        "environment": "staging",
+        "owner": "codestra-integration",
+        "provider": "odoo"
+      },
+      "expected_receiver": "middleware-warning"
+    }
+  ],
+  "delivery_performed": false,
+  "production_authorized": false
+}

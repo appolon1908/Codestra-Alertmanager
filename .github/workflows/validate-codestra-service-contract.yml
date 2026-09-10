@@ -1,0 +1,30 @@
+name: Validate Codestra service API contract
+
+on:
+  pull_request:
+    paths:
+      - 'codestra/api/service-contract.v1.json'
+      - 'docs/CODESTRA-SERVICE-API.md'
+      - '.github/workflows/validate-codestra-service-contract.yml'
+  push:
+    branches: [development, test, staging, production, main, 'feature/**']
+    paths:
+      - 'codestra/api/service-contract.v1.json'
+      - 'docs/CODESTRA-SERVICE-API.md'
+      - '.github/workflows/validate-codestra-service-contract.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codestra-service-contract-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: appolon1908-hue/Codestra-Telemetry/.github/workflows/reusable-validate-service-contract.yml@c35d880a730ca5206d445e8a9a688cb465ae2ad4
+    with:
+      expected_repository: 'appolon1908-hue/Codestra-Alertmanager'
+      expected_component: 'alertmanager'
+      expected_contract_id: 'codestra.observability.alertmanager.v1'
+      schema_authority_revision: 'c35d880a730ca5206d445e8a9a688cb465ae2ad4'

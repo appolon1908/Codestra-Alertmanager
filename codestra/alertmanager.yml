@@ -1,0 +1,155 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: middleware-default
+  group_by:
+    - alertname
+    - codestra_business
+    - service
+    - environment
+    - severity
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - receiver: middleware-heartbeat
+      matchers:
+        - alertname = "CodestraWatchdog"
+      group_wait: 0s
+      group_interval: 1m
+      repeat_interval: 5m
+
+    - receiver: middleware-critical
+      matchers:
+        - severity = "critical"
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 15m
+
+    - receiver: middleware-high
+      matchers:
+        - severity = "high"
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 30m
+
+    - receiver: middleware-warning
+      matchers:
+        - severity = "warning"
+      group_wait: 2m
+      group_interval: 10m
+      repeat_interval: 2h
+
+    - receiver: middleware-informational
+      matchers:
+        - severity = "informational"
+      group_wait: 5m
+      group_interval: 15m
+      repeat_interval: 12h
+
+inhibit_rules:
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity =~ "high|warning|informational"
+    equal:
+      - alertname
+      - codestra_business
+      - service
+      - environment
+
+  - source_matchers:
+      - severity = "high"
+    target_matchers:
+      - severity =~ "warning|informational"
+    equal:
+      - alertname
+      - codestra_business
+      - service
+      - environment
+
+  - source_matchers:
+      - severity = "warning"
+    target_matchers:
+      - severity = "informational"
+    equal:
+      - alertname
+      - codestra_business
+      - service
+      - environment
+
+  - source_matchers:
+      - alertname = "CodestraDeploymentInProgress"
+    target_matchers:
+      - severity =~ "high|warning|informational"
+    equal:
+      - service
+      - environment
+
+receivers:
+  - name: middleware-default
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 100
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token
+
+  - name: middleware-heartbeat
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 10
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token
+
+  - name: middleware-critical
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 100
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token
+
+  - name: middleware-high
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 100
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token
+
+  - name: middleware-warning
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 100
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token
+
+  - name: middleware-informational
+    webhook_configs:
+      - send_resolved: true
+        url_file: /run/secrets/middleware-alert-webhook-url
+        max_alerts: 100
+        timeout: 10s
+        http_config:
+          authorization:
+            type: Bearer
+            credentials_file: /run/secrets/middleware-alert-webhook-token

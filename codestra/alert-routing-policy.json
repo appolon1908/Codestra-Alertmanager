@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "canonical_host": "aler.codestra.media",
+  "exposure": "private_service_with_protected_dns_name",
+  "purpose": "central_alert_routing_only",
+  "runtime_status": "SOURCE_PREPARED_NOT_DEPLOYED",
+  "authorities": {
+    "metrics_source": "appolon1908-hue/Codestra-Prometheus",
+    "dashboard_consumer": "appolon1908-hue/Codestra-Grafana-",
+    "cross_system_write_authority": "appolon1908-hue/Middleware-",
+    "orchestration": "appolon1908-hue/N8N",
+    "crm_incident_state": "appolon1908-hue/Odoo",
+    "architecture_coordination": "appolon1908-hue/communication-platform-"
+  },
+  "routing": {
+    "group_by": [
+      "alertname",
+      "codestra_business",
+      "service",
+      "environment",
+      "severity"
+    ],
+    "default_group_wait": "30s",
+    "default_group_interval": "5m",
+    "default_repeat_interval": "4h",
+    "receiver_transport": "middleware_webhook_only",
+    "webhook_url_file": "/run/secrets/middleware-alert-webhook-url",
+    "webhook_bearer_file": "/run/secrets/middleware-alert-webhook-token",
+    "send_resolved": true
+  },
+  "severity": {
+    "critical": {
+      "priority": 1,
+      "group_wait": "10s",
+      "group_interval": "2m",
+      "repeat_interval": "15m",
+      "expected_action": "page_and_escalate_via_middleware"
+    },
+    "high": {
+      "priority": 2,
+      "group_wait": "30s",
+      "group_interval": "5m",
+      "repeat_interval": "30m",
+      "expected_action": "escalate_via_middleware"
+    },
+    "warning": {
+      "priority": 3,
+      "group_wait": "2m",
+      "group_interval": "10m",
+      "repeat_interval": "2h",
+      "expected_action": "notify_owner_via_middleware"
+    },
+    "informational": {
+      "priority": 4,
+      "group_wait": "5m",
+      "group_interval": "15m",
+      "repeat_interval": "12h",
+      "expected_action": "record_and_route_if_policy_requires"
+    }
+  },
+  "required_labels": [
+    "alertname",
+    "severity",
+    "environment",
+    "service",
+    "codestra_business",
+    "owner"
+  ],
+  "required_annotations": [
+    "summary",
+    "description",
+    "runbook_url"
+  ],
+  "inhibition": [
+    "critical_inhibits_lower_severity_for_same_alert_business_service_environment",
+    "high_inhibits_warning_and_informational_for_same_alert_business_service_environment",
+    "warning_inhibits_informational_for_same_alert_business_service_environment",
+    "deployment_in_progress_inhibits_noncritical_service_noise_for_same_service_environment"
+  ],
+  "silence_policy": {
+    "manual_maintenance_silence_required": true,
+    "requires_owner": true,
+    "requires_comment_or_change_reference": true,
+    "requires_expiry": true,
+    "indefinite_silence_forbidden": true,
+    "critical_security_alerts_should_not_be_blanket_silenced": true
+  },
+  "incident_model": {
+    "alertmanager_native_states": ["firing", "resolved", "silenced"],
+    "middleware_incident_states": [
+      "detected",
+      "notified",
+      "acknowledged",
+      "escalated",
+      "mitigating",
+      "resolved",
+      "reopened"
+    ],
+    "incident_id_authority": "middleware",
+    "acknowledgement_authority": "middleware_or_governed_operator_ui",
+    "ticket_creation_authority": "middleware",
+    "odoo_incident_write_path": "middleware_only",
+    "n8n_orchestration_path": "middleware_governed_only"
+  },
+  "safety": {
+    "direct_email_receiver": false,
+    "direct_sms_receiver": false,
+    "direct_voice_receiver": false,
+    "direct_slack_receiver": false,
+    "direct_pagerduty_receiver": false,
+    "direct_odoo_write": false,
+    "direct_n8n_privileged_write": false,
+    "direct_provider_write": false,
+    "secrets_in_git": false,
+    "native_service_public_exposure": false
+  }
+}

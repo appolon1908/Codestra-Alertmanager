@@ -1,0 +1,98 @@
+name: Validate Codestra Alertmanager routing
+
+on:
+  pull_request:
+    paths:
+      - 'codestra/**'
+      - 'scripts/**'
+      - '.github/workflows/validate-codestra-alertmanager.yml'
+  push:
+    branches:
+      - main
+      - development
+      - staging
+      - production
+      - test
+    paths:
+      - 'codestra/**'
+      - 'scripts/**'
+      - '.github/workflows/validate-codestra-alertmanager.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5
+        with:
+          go-version-file: upstream/go.mod
+          cache-dependency-path: upstream/go.sum
+
+      - name: Validate Codestra routing policy and test matrix
+        run: |
+          python3 -m py_compile \
+            scripts/validate_codestra_alertmanager.py \
+            scripts/test_stage6_alert_routing.py
+          python3 scripts/validate_codestra_alertmanager.py
+          python3 scripts/test_stage6_alert_routing.py
+
+      - name: Build pinned upstream amtool
+        working-directory: upstream
+        run: go build -trimpath -o ../.bin/amtool ./cmd/amtool
+
+      - name: Validate native Alertmanager configuration in UTF-8 strict mode
+        run: |
+          sudo install -d -m 0700 /run/secrets
+          printf '%s\n' 'http://127.0.0.1:9/v1/alerts' | sudo tee /run/secrets/middleware-alert-webhook-url >/dev/null
+          printf '%s\n' 'ci-nondelivery-placeholder' | sudo tee /run/secrets/middleware-alert-webhook-token >/dev/null
+          sudo chmod 0600 \
+            /run/secrets/middleware-alert-webhook-url \
+            /run/secrets/middleware-alert-webhook-token
+          .bin/amtool --enable-feature=utf8-strict-mode check-config codestra/alertmanager.yml
+
+      - name: Execute Stage 6 alert routing tests without delivery
+        run: python3 scripts/test_stage6_alert_routing.py --amtool .bin/amtool
+
+      - name: Render and inspect private runtime authority
+        env:
+          ALERTMANAGER_IMAGE: example.invalid/alertmanager@sha256:0000000000000000000000000000000000000000000000000000000000000000
+          ALERTMANAGER_EXTERNAL_URL: https://aler.codestra.media/
+          CODESTRA_OBSERVABILITY_NETWORK: codestra-observability
+          CODESTRA_INTEGRATION_NETWORK: codestra-integration
+          MIDDLEWARE_ALERT_WEBHOOK_URL_SECRET: codestra-middleware-alert-webhook-url
+          MIDDLEWARE_ALERT_WEBHOOK_TOKEN_SECRET: codestra-middleware-alert-webhook-token
+        run: |
+          docker compose -f codestra/compose.yaml config --format json > /tmp/compose.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          config = json.loads(Path('/tmp/compose.json').read_text())
+          service = config['services']['alertmanager']
+          assert '@sha256:' in service['image']
+          assert service['user'] == '65534:65534'
+          assert service['read_only'] is True
+          assert service['cap_drop'] == ['ALL']
+          assert not service.get('ports')
+          assert service['expose'] == ['9093']
+          assert set(service['networks']) == {'observability', 'integration'}
+          command = set(service['command'])
+          assert '--cluster.listen-address=' in command
+          assert '--enable-feature=utf8-strict-mode,auto-gomemlimit,receiver-name-in-metrics' in command
+          assert '--silences.max-silences=5000' in command
+          assert '--silences.max-silence-size-bytes=65536' in command
+          assert config['networks']['observability']['external'] is True
+          assert config['networks']['integration']['external'] is True
+          PY
+
+      - name: Reject secrets mutable images and direct delivery receivers
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          ! grep -RInE '(api[_-]?key|client[_-]?secret|password|token)[[:space:]]*[:=][[:space:]]*[A-Za-z0-9/+_.-]{16,}' codestra
+          ! grep -RInE 'image:.*(:latest|:[[:space:]]*$)' codestra
+          ! grep -RInE '(^|[[:space:]])(email|slack|pagerduty|opsgenie|telegram|webex|msteams|victorops)_configs:' codestra/alertmanager.yml

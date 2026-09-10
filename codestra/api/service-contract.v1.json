@@ -1,0 +1,188 @@
+{
+  "authorityRole": "middleware-governed-alert-routing-authority",
+  "canonicalHostname": "aler.codestra.media",
+  "component": "alertmanager",
+  "contractId": "codestra.observability.alertmanager.v1",
+  "correlation": {
+    "indexedFields": [
+      "codestra_business",
+      "application",
+      "service",
+      "environment",
+      "server",
+      "region",
+      "deployment"
+    ],
+    "propagateHeaders": [
+      "X-Correlation-ID",
+      "traceparent"
+    ],
+    "protectedNonIndexedFields": [
+      "request_id",
+      "trace_id",
+      "tenant_id"
+    ],
+    "structuredFields": [
+      "correlation_id",
+      "request_id",
+      "trace_id",
+      "tenant_id"
+    ]
+  },
+  "deploymentClass": "central",
+  "displayName": "Alertmanager",
+  "integrations": [
+    {
+      "direction": "inbound",
+      "mutating": false,
+      "peer": "prometheus",
+      "protocol": "alertmanager-http-api",
+      "purpose": "receive evaluated alerts",
+      "signal": "alerts"
+    },
+    {
+      "direction": "inbound",
+      "mutating": false,
+      "peer": "grafana",
+      "protocol": "alertmanager-http-api",
+      "purpose": "serve read-only alert state",
+      "signal": "alerts"
+    },
+    {
+      "direction": "outbound",
+      "mutating": false,
+      "peer": "codestra-middleware",
+      "protocol": "https-webhook",
+      "purpose": "route notifications through the governed communications path",
+      "signal": "alerts"
+    }
+  ],
+  "managementReadback": {
+    "allowsMutation": false,
+    "controlApiOwner": "appolon1908-hue/Codestra-Telemetry",
+    "exposesSecretValues": false,
+    "healthOperationId": "health",
+    "readinessOperationId": "readiness",
+    "registryServiceId": "alertmanager",
+    "responseBodyPolicy": "discard"
+  },
+  "nativeApi": {
+    "authentication": {
+      "callerControlledBusinessAllowed": false,
+      "credentialSource": "secret_file",
+      "requiredScopes": [
+        "observability.read"
+      ],
+      "tenantHeader": null,
+      "transport": "private_mtls"
+    },
+    "baseUrlEnvironment": "CODESTRA_ALERTMANAGER_URL",
+    "operations": [
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "health",
+        "controlPlaneProxyAllowed": false,
+        "id": "health",
+        "method": "GET",
+        "path": "/-/healthy",
+        "responseBodyPolicy": "discard",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "readiness",
+        "controlPlaneProxyAllowed": false,
+        "id": "readiness",
+        "method": "GET",
+        "path": "/-/ready",
+        "responseBodyPolicy": "discard",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "metrics",
+        "controlPlaneProxyAllowed": false,
+        "id": "metrics",
+        "method": "GET",
+        "path": "/metrics",
+        "responseBodyPolicy": "discard",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "query",
+        "controlPlaneProxyAllowed": false,
+        "id": "status",
+        "method": "GET",
+        "path": "/api/v2/status",
+        "responseBodyPolicy": "native",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "query",
+        "controlPlaneProxyAllowed": false,
+        "id": "alerts",
+        "method": "GET",
+        "path": "/api/v2/alerts",
+        "responseBodyPolicy": "native",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "read_only",
+        "category": "query",
+        "controlPlaneProxyAllowed": false,
+        "id": "silences",
+        "method": "GET",
+        "path": "/api/v2/silences",
+        "responseBodyPolicy": "native",
+        "timeoutMs": 3000
+      },
+      {
+        "acceptedStatuses": [200],
+        "access": "ingest",
+        "category": "ingest",
+        "controlPlaneProxyAllowed": false,
+        "id": "alert-ingest",
+        "method": "POST",
+        "path": "/api/v2/alerts",
+        "responseBodyPolicy": "native",
+        "timeoutMs": 3000
+      }
+    ]
+  },
+  "nativeExposure": "internal_private",
+  "release": {
+    "imageDigestEnvironment": "CODESTRA_ALERTMANAGER_IMAGE_DIGEST",
+    "immutableImageRequired": true,
+    "sourceRevisionEnvironment": "CODESTRA_ALERTMANAGER_SOURCE_REVISION"
+  },
+  "repository": "appolon1908-hue/Codestra-Alertmanager",
+  "safety": {
+    "anonymousManagementAccessAllowed": false,
+    "callerControlledBusinessAllowed": false,
+    "crossBusinessDefaultAllowed": false,
+    "insecureTlsVerificationAllowed": false,
+    "mutationProxyEnabled": false,
+    "nativeApiProxyEnabled": false,
+    "runtimeActivationAuthorized": false,
+    "secretValueReadbackEnabled": false
+  },
+  "schemaAuthority": {
+    "path": "codestra/api/service-contract.schema.json",
+    "repository": "appolon1908-hue/Codestra-Telemetry",
+    "sourceRevision": "c35d880a730ca5206d445e8a9a688cb465ae2ad4",
+    "version": "1.0.0"
+  },
+  "schemaVersion": "1.0.0",
+  "signals": {
+    "consumes": ["alerts"],
+    "produces": ["alerts"]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0.0",
+  "artifactModel": "verified-upstream-image-plus-signed-config",
+  "upstreamRepository": "prometheus/alertmanager",
+  "upstreamVersion": "v0.34.0",
+  "upstreamTagCommit": "085f0ef7eb41da24cab8cd000f1345b6250f2edb",
+  "image": "quay.io/prometheus/alertmanager@sha256:690c7b525f4367aa91f73e2f91c632206d32e97c6384bdbf2fb7a861b420340d",
+  "linuxAmd64Manifest": "sha256:268d4bf0e4bc0fe6dbdef6a59ce81a2918c88458bf8edf7dd0572ad372a093e6",
+  "upstreamSignature": {
+    "available": false,
+    "verification": "NO_SIGSTORE_SIGNATURE_PUBLISHED"
+  },
+  "productionActivation": false
+}

@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "status": "SOURCE_AUTHORITY_ACCEPTED_RUNTIME_ENDPOINT_NOT_PROVEN",
+  "direction": "alertmanager_to_middleware",
+  "middleware_source_authority": {
+    "repository": "appolon1908-hue/Middleware-",
+    "protected_branch": "main",
+    "protected_merge_sha": "65b8e511a412c4ba922876e906f95b9f2e4277a1",
+    "canonical_path": "/v1/integrations/alertmanager/events"
+  },
+  "transport": {
+    "method": "POST",
+    "content_type": "application/json",
+    "url_source": "/run/secrets/middleware-alert-webhook-url",
+    "authorization": "bearer_token_from_file",
+    "authorization_source": "/run/secrets/middleware-alert-webhook-token",
+    "tls_required": true
+  },
+  "source_payload": "prometheus_alertmanager_webhook_v4_compatible",
+  "normalization": {
+    "group_key": "groupKey",
+    "source_status": "status",
+    "receiver": "receiver",
+    "external_url": "externalURL",
+    "common_labels": "commonLabels",
+    "common_annotations": "commonAnnotations",
+    "alerts": "alerts[]"
+  },
+  "per_alert_required_fields": [
+    "status",
+    "labels.alertname",
+    "labels.severity",
+    "labels.environment",
+    "labels.service",
+    "labels.codestra_business",
+    "labels.owner",
+    "annotations.summary",
+    "annotations.description",
+    "annotations.runbook_url",
+    "startsAt",
+    "fingerprint"
+  ],
+  "middleware_responsibilities": [
+    "authenticate_alertmanager_workload",
+    "validate_schema_and_required_metadata",
+    "derive_stable_idempotency_key",
+    "create_or_update_incident_id",
+    "persist_incident_timeline",
+    "apply_environment_and_business_routing_policy",
+    "deduplicate_cross_delivery_attempts",
+    "route_approved_notifications",
+    "record_acknowledgement_and_escalation",
+    "preserve_audit_and_correlation_metadata",
+    "forbid_automatic_business_system_mutation"
+  ],
+  "idempotency_recommendation": {
+    "components": ["groupKey", "alert.fingerprint", "alert.status", "alert.startsAt"],
+    "require_durable_deduplication": true
+  },
+  "incident_fields": [
+    "incident_id",
+    "alert_fingerprint",
+    "alertname",
+    "severity",
+    "codestra_business",
+    "service",
+    "environment",
+    "owner",
+    "summary",
+    "description",
+    "runbook_url",
+    "starts_at",
+    "ends_at",
+    "source_status",
+    "incident_status",
+    "acknowledged_by",
+    "acknowledged_at",
+    "escalation_level",
+    "ticket_reference",
+    "deployment_sha",
+    "correlation_id"
+  ],
+  "forbidden_effects_from_alertmanager": [
+    "direct_email_delivery",
+    "direct_sms_delivery",
+    "direct_voice_call",
+    "direct_odoo_write",
+    "direct_n8n_privileged_write",
+    "direct_provider_api_write",
+    "trade_or_financial_mutation"
+  ]
+}
