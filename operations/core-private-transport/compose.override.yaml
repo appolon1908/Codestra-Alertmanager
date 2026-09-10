@@ -1,0 +1,36 @@
+# Compatibility overlay for the existing core monitoring project.
+# Merge only after all existing Prometheus clients and scrape jobs are prepared for mTLS.
+services:
+  alertmanager:
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --web.config.file=/etc/alertmanager/private-web-config.yml
+    ports:
+      - "10.40.0.1:19093:9093"
+    volumes:
+      - type: bind
+        source: ${ALERTMANAGER_WEB_CONFIG_FILE:?absolute validated web config path required}
+        target: /etc/alertmanager/private-web-config.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ALERTMANAGER_PROBE_CONFIG_FILE:?absolute validated probe config path required}
+        target: /etc/alertmanager/probe-client.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${ALERTMANAGER_TLS_DIR:?provisioned dedicated TLS directory required}
+        target: /etc/alertmanager/tls
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - /bin/amtool --http.config.file=/etc/alertmanager/probe-client.yml --alertmanager.url=https://127.0.0.1:9093 config show >/dev/null
+      interval: 30s
+      timeout: 5s
+      retries: 3

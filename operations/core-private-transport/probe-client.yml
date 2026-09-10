@@ -1,0 +1,7 @@
+tls_config:
+  ca_file: /etc/alertmanager/tls/server-ca.crt
+  cert_file: /etc/alertmanager/tls/probe.crt
+  key_file: /etc/alertmanager/tls/probe.key
+  server_name: alertmanager.core.codestra.internal
+  insecure_skip_verify: false
+  min_version: TLS12
