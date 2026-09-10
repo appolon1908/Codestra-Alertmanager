@@ -1,0 +1,97 @@
+{
+  "scope": "central_alertmanager_receiver_permissions",
+  "server": "65.109.65.169",
+  "source_pr": 18,
+  "source_commit": "c397e2cd733ffb52c2e3493f93e348656279684d",
+  "merged_commit": "f3ea42de62f6f17759ce5cd9a5500aa0abf6480b",
+  "repair": [
+    {
+      "applied": true,
+      "changes": [
+        {
+          "after_gid": 65534,
+          "after_mode": "0o440",
+          "after_uid": 0,
+          "before_gid": 0,
+          "before_mode": "0o600",
+          "before_uid": 0,
+          "path": "/etc/codestra/secrets/monitoring/recovery_receiver_url"
+        },
+        {
+          "after_gid": 65534,
+          "after_mode": "0o440",
+          "after_uid": 0,
+          "before_gid": 0,
+          "before_mode": "0o600",
+          "before_uid": 0,
+          "path": "/etc/codestra/secrets/monitoring/rejected_route_url"
+        },
+        {
+          "after_gid": 65534,
+          "after_mode": "0o440",
+          "after_uid": 0,
+          "before_gid": 0,
+          "before_mode": "0o600",
+          "before_uid": 0,
+          "path": "/etc/codestra/secrets/monitoring/primary_receiver_url"
+        },
+        {
+          "after_gid": 65534,
+          "after_mode": "0o440",
+          "after_uid": 0,
+          "before_gid": 0,
+          "before_mode": "0o600",
+          "before_uid": 0,
+          "path": "/etc/codestra/secrets/monitoring/secondary_receiver_url"
+        }
+      ]
+    },
+    {
+      "files": [
+        {
+          "nonempty": true,
+          "path": "/run/secrets/alertmanager_primary_receiver_url",
+          "readable": true
+        },
+        {
+          "nonempty": true,
+          "path": "/run/secrets/alertmanager_recovery_receiver_url",
+          "readable": true
+        },
+        {
+          "nonempty": true,
+          "path": "/run/secrets/alertmanager_rejected_route_url",
+          "readable": true
+        },
+        {
+          "nonempty": true,
+          "path": "/run/secrets/alertmanager_secondary_receiver_url",
+          "readable": true
+        }
+      ],
+      "notification_delivery_verified": false,
+      "ready": true,
+      "runtime_user": "nobody"
+    }
+  ],
+  "post_repair_observations": [
+    {
+      "notifications_total": 20712,
+      "notifications_failed_total": 20709
+    },
+    {
+      "notifications_total": 20723,
+      "notifications_failed_total": 20709
+    }
+  ],
+  "observation_delta": {
+    "notification_attempts": 11,
+    "notification_failures": 0,
+    "successful_webhooks": 11
+  },
+  "synthetic_notifications_sent": 0,
+  "receiver_urls_changed": false,
+  "service_restarted": false,
+  "recipient_receipt_verification": "not_performed",
+  "klyrow_cross_host_route": "pending_private_mtls_listener_and_client_identity"
+}
