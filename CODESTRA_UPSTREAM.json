@@ -1,13 +1,27 @@
 {
   "schema_version": "1.0",
-  "component": "alertmanager",
+  "component": "Alertmanager",
   "codestra_repository": "appolon1908-hue/Codestra-Alertmanager",
   "upstream_repository": "prometheus/alertmanager",
   "upstream_clone_url": "https://github.com/prometheus/alertmanager.git",
-  "upstream_ref": "main",
+  "upstream_ref": "41dec65b373bc9ec38d8e02e51f790b9f71008df",
   "import_path": "upstream",
   "import_mode": "shallow-source-snapshot",
   "preserve_upstream_license": true,
-  "branches": ["main", "staging", "production"],
-  "deployment_enabled": false
+  "deployment_enabled": false,
+  "secret_material_allowed_in_git": false,
+  "source_transform": {
+    "rule": "replace Slack incoming-webhook test fixture host with hooks.slack.invalid",
+    "needle": "https://hooks.slack.com/services/",
+    "replacement": "https://hooks.slack.invalid/services/",
+    "expected_occurrences": 6,
+    "expected_paths": [
+      "config/config_test.go",
+      "config/notifiers_test.go",
+      "config/testdata/conf.slack-both-url-and-token.yml",
+      "config/testdata/conf.slack-default-app-token.yml",
+      "config/testdata/conf.slack-update-message-and-webhook.yml"
+    ],
+    "transformed_tree_oid": "0f92e4b59267985dbe2ea152e655dcbc147f7075"
+  }
 }

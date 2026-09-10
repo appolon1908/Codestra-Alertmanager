@@ -9,7 +9,9 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
+  pull-requests: write
 
 concurrency:
   group: codestra-upstream-source-sync
@@ -18,73 +20,175 @@ concurrency:
 jobs:
   sync:
     if: github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Checkout Codestra authority
+      - name: Check out Codestra authority
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
-      - name: Import official upstream source snapshot
+          persist-credentials: true
+
+      - name: Import exact official upstream source with bounded transform
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
           mapfile -t values < <(python3 - <<'PY'
           import json
           from pathlib import Path
-          data=json.loads(Path('CODESTRA_UPSTREAM.json').read_text())
-          print(data['upstream_clone_url']); print(data['upstream_ref']); print(data['import_path'])
+          data = json.loads(Path('CODESTRA_UPSTREAM.json').read_text())
+          print(data['upstream_clone_url'])
+          print(data['upstream_ref'])
+          print(data['import_path'])
+          print(data['source_transform']['transformed_tree_oid'])
           PY
           )
-          UPSTREAM_URL="${values[0]}"; UPSTREAM_REF="${values[1]}"; IMPORT_PATH="${values[2]}"
-          [[ "$UPSTREAM_URL" == https://github.com/*.git ]] || exit 2
-          [[ "$IMPORT_PATH" == upstream ]] || exit 2
-          rm -rf .codestra-upstream-src "$IMPORT_PATH"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 --branch "$UPSTREAM_REF" "$UPSTREAM_URL" .codestra-upstream-src
+          UPSTREAM_URL="${values[0]}"
+          UPSTREAM_REF="${values[1]}"
+          IMPORT_PATH="${values[2]}"
+          EXPECTED_TRANSFORMED_TREE="${values[3]}"
+          [[ "$UPSTREAM_URL" == 'https://github.com/prometheus/alertmanager.git' ]]
+          [[ "$UPSTREAM_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$IMPORT_PATH" == upstream ]]
+          [[ "$EXPECTED_TRANSFORMED_TREE" =~ ^[0-9a-f]{40}$ ]]
+
+          rm -rf .codestra-upstream-src
+          git init --quiet .codestra-upstream-src
+          git -C .codestra-upstream-src remote add origin "$UPSTREAM_URL"
+          GIT_LFS_SKIP_SMUDGE=1 git -C .codestra-upstream-src fetch --depth 1 --no-tags origin "$UPSTREAM_REF"
+          git -C .codestra-upstream-src checkout --quiet --detach FETCH_HEAD
           UPSTREAM_SHA="$(git -C .codestra-upstream-src rev-parse HEAD)"
-          rm -rf .codestra-upstream-src/.git
-          mv .codestra-upstream-src "$IMPORT_PATH"
+          [[ "$UPSTREAM_SHA" == "$UPSTREAM_REF" ]]
+          UPSTREAM_TIMESTAMP="$(git -C .codestra-upstream-src show -s --format=%cI "$UPSTREAM_SHA")"
 
-          SANITIZED_COUNT="$(python3 - <<'PY'
-          from pathlib import Path
-          needle=b'https://hooks.slack.com/services/'
-          replacement=b'https://hooks.slack.invalid/services/'
-          changed=0
-          for path in Path('upstream').rglob('*'):
-              if not path.is_file():
-                  continue
-              try:
-                  data=path.read_bytes()
-              except OSError:
-                  continue
-              if needle in data:
-                  path.write_bytes(data.replace(needle, replacement))
-                  changed += 1
-          print(changed)
-          PY
-          )"
-
-          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA SANITIZED_COUNT
           python3 - <<'PY'
-          import json, os
-          from datetime import datetime, timezone
           from pathlib import Path
-          Path('CODESTRA_UPSTREAM_LOCK.json').write_text(json.dumps({
-              'schema_version':'1.0',
-              'upstream_clone_url':os.environ['UPSTREAM_URL'],
-              'upstream_ref':os.environ['UPSTREAM_REF'],
-              'upstream_commit':os.environ['UPSTREAM_SHA'],
-              'import_path':'upstream',
-              'synchronized_at':datetime.now(timezone.utc).isoformat(),
-              'deployment_enabled':False,
-              'sanitizations':[{ 'rule':'replace Slack incoming-webhook test fixture host with hooks.slack.invalid', 'files_changed':int(os.environ['SANITIZED_COUNT']) }]
-          }, indent=2)+'\n')
+
+          root = Path('.codestra-upstream-src')
+          needle = b'https://hooks.slack.com/services/'
+          replacement = b'https://hooks.slack.invalid/services/'
+          expected_paths = {
+              'config/config_test.go',
+              'config/notifiers_test.go',
+              'config/testdata/conf.slack-both-url-and-token.yml',
+              'config/testdata/conf.slack-default-app-token.yml',
+              'config/testdata/conf.slack-update-message-and-webhook.yml',
+          }
+          expected_occurrences = 6
+          counts = {}
+          for path in sorted(root.rglob('*')):
+              if '.git' in path.parts or not path.is_file() or path.is_symlink():
+                  continue
+              data = path.read_bytes()
+              count = data.count(needle)
+              if count:
+                  relative = path.relative_to(root).as_posix()
+                  counts[relative] = count
+                  path.write_bytes(data.replace(needle, replacement))
+          if set(counts) != expected_paths:
+              raise SystemExit(f'unexpected_sanitized_paths:{sorted(counts)}')
+          if sum(counts.values()) != expected_occurrences:
+              raise SystemExit(f'unexpected_sanitized_occurrences:{sum(counts.values())}')
+          if any(
+              needle in path.read_bytes()
+              for path in root.rglob('*')
+              if '.git' not in path.parts and path.is_file() and not path.is_symlink()
+          ):
+              raise SystemExit('unsanitized_slack_fixture_remaining')
           PY
+
+          git -C .codestra-upstream-src add -A
+          TRANSFORMED_TREE_OID="$(git -C .codestra-upstream-src write-tree)"
+          [[ "$TRANSFORMED_TREE_OID" == "$EXPECTED_TRANSFORMED_TREE" ]]
+          git -C .codestra-upstream-src config user.name 'codestra-upstream-sync'
+          git -C .codestra-upstream-src config user.email 'github-actions[bot]@users.noreply.github.com'
+          export GIT_AUTHOR_DATE="$UPSTREAM_TIMESTAMP"
+          export GIT_COMMITTER_DATE="$UPSTREAM_TIMESTAMP"
+          TRANSFORMED_COMMIT="$(git -C .codestra-upstream-src commit-tree "$TRANSFORMED_TREE_OID" -p "$UPSTREAM_SHA" -m "Codestra bounded Alertmanager fixture transform")"
+          git fetch --no-tags .codestra-upstream-src "$TRANSFORMED_COMMIT"
+
+          export UPSTREAM_URL UPSTREAM_REF UPSTREAM_SHA UPSTREAM_TIMESTAMP TRANSFORMED_TREE_OID
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          Path('CODESTRA_UPSTREAM_LOCK.json').write_text(json.dumps({
+              'schema_version': '1.0',
+              'upstream_clone_url': os.environ['UPSTREAM_URL'],
+              'upstream_ref': os.environ['UPSTREAM_REF'],
+              'upstream_commit': os.environ['UPSTREAM_SHA'],
+              'import_path': 'upstream',
+              'synchronized_at': os.environ['UPSTREAM_TIMESTAMP'],
+              'deployment_enabled': False,
+              'secret_material_allowed_in_git': False,
+              'source_transform': {
+                  'rule': 'replace Slack incoming-webhook test fixture host with hooks.slack.invalid',
+                  'expected_occurrences': 6,
+                  'expected_paths': [
+                      'config/config_test.go',
+                      'config/notifiers_test.go',
+                      'config/testdata/conf.slack-both-url-and-token.yml',
+                      'config/testdata/conf.slack-default-app-token.yml',
+                      'config/testdata/conf.slack-update-message-and-webhook.yml',
+                  ],
+                  'transformed_tree_oid': os.environ['TRANSFORMED_TREE_OID'],
+              },
+          }, indent=2) + '\n')
+          PY
+
           git config user.name 'codestra-upstream-sync'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git add -A upstream CODESTRA_UPSTREAM_LOCK.json
-          git diff --cached --quiet && exit 0
-          git commit -m "vendor: sync official upstream ${UPSTREAM_SHA}"
-          git push origin HEAD:main
-          git push origin HEAD:staging
-          git push origin HEAD:production
+          SYNC_BRANCH="sync/alertmanager-upstream-${UPSTREAM_SHA}"
+          git switch --create "$SYNC_BRANCH"
+          git rm -r --cached --quiet --ignore-unmatch upstream
+          git read-tree --prefix=upstream/ "${TRANSFORMED_COMMIT}^{tree}"
+          git add CODESTRA_UPSTREAM_LOCK.json
+          if git diff --cached --quiet; then
+            echo 'Exact transformed upstream snapshot already current.'
+            exit 0
+          fi
+          git commit -m "vendor(alertmanager): Sync official upstream ${UPSTREAM_SHA}"
+
+          LOCAL_SHA="$(git rev-parse HEAD)"
+          REMOTE_SHA="$(git ls-remote --heads origin "refs/heads/${SYNC_BRANCH}" | awk '{print $1}')"
+          if [[ -n "$REMOTE_SHA" ]]; then
+            [[ "$REMOTE_SHA" == "$LOCAL_SHA" ]] || {
+              echo 'Existing sync branch differs; refusing replacement.' >&2
+              exit 3
+            }
+          else
+            git push origin "HEAD:refs/heads/${SYNC_BRANCH}"
+          fi
+
+          REPOSITORY_OWNER="${GITHUB_REPOSITORY%%/*}"
+          mapfile -t OPEN_PRS < <(
+            gh api \
+              "repos/${GITHUB_REPOSITORY}/pulls?state=open&base=main&head=${REPOSITORY_OWNER}:${SYNC_BRANCH}&per_page=100" \
+              --jq '.[] | [.number,.base.ref,.head.ref,.head.repo.owner.login,.head.repo.full_name,.head.sha] | @tsv'
+          )
+          if (( ${#OPEN_PRS[@]} > 1 )); then
+            echo 'Multiple open synchronization pull requests found.' >&2
+            exit 3
+          elif (( ${#OPEN_PRS[@]} == 0 )); then
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base main \
+              --head "$SYNC_BRANCH" \
+              --title "vendor(alertmanager): Sync reviewed official upstream ${UPSTREAM_SHA}" \
+              --body "Pins exact official Alertmanager commit ${UPSTREAM_SHA} and applies only the reviewed five-file Slack fixture-host transform. Deployment remains disabled. Normal source validation and independent review are required."
+          else
+            IFS=$'\t' read -r PR_NUMBER PR_BASE PR_HEAD PR_OWNER PR_REPOSITORY PR_HEAD_SHA <<< "${OPEN_PRS[0]}"
+            [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]
+            [[ "$PR_BASE" == main ]]
+            [[ "$PR_HEAD" == "$SYNC_BRANCH" ]]
+            [[ "$PR_OWNER" == "$REPOSITORY_OWNER" ]]
+            [[ "$PR_REPOSITORY" == "$GITHUB_REPOSITORY" ]]
+            [[ "$PR_HEAD_SHA" == "$LOCAL_SHA" ]] || {
+              echo 'Existing synchronization pull request identity differs; refusing reuse.' >&2
+              exit 3
+            }
+          fi
+          gh workflow run validate.yml --repo "$GITHUB_REPOSITORY" --ref "$SYNC_BRANCH"
