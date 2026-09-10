@@ -1,0 +1,17 @@
+# Compatibility repair for the existing core monitoring deployment.
+# This is not the canonical new Server B Alertmanager release.
+services:
+  alertmanager:
+    volumes:
+      - type: bind
+        source: /etc/codestra/secrets/monitoring/receiver_bearer
+        target: /run/secrets/alertmanager_receiver_bearer
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: /etc/codestra/secrets/monitoring/social_staging_test_receiver_url
+        target: /run/secrets/alertmanager_social_staging_test_receiver_url
+        read_only: true
+        bind:
+          create_host_path: false
