@@ -20,3 +20,10 @@ CI additionally validates the configuration with the exact accepted Alertmanager
 The repository uses Model B: the reviewed upstream Alertmanager image is pinned by digest, while Codestra configuration is packaged and signed as a separate immutable artifact. The release workflow remains disabled until it is merged through the accepted protected production lineage. Runtime secret values are mounted as files and never belong in Git or release evidence.
 
 See [REPOSITORY_PROFILE.md](REPOSITORY_PROFILE.md), [codestra/docs/OPERATING-MODEL.md](codestra/docs/OPERATING-MODEL.md), and [docs/BACKUP_RESTORE_ROLLBACK.md](docs/BACKUP_RESTORE_ROLLBACK.md).
+
+## Existing runtime receiver diagnostics
+
+Use `scripts/verify_receiver_access.py --container <name> --config <effective-host-config>`
+to verify every configured receiver, authentication and TLS file reference.
+Mounted URL files alone do not prove that the bearer credential exists.
+See [the core compatibility repair](docs/CORE_RECEIVER_MOUNT_REPAIR.md).
