@@ -99,7 +99,8 @@
       "repository": "appolon1908-hue/Middleware-",
       "path": "contracts/observability/odoo-sync.v1.json"
     },
-    "middleware_incident_endpoint": "/v1/observability/incidents",
+    "middleware_alertmanager_endpoint": "/v1/integrations/alertmanager/events",
+  "middleware_projection_endpoint": "/v1/observability/incidents",
     "incident_identity": "incident_id + resource_version",
     "send_resolved": true,
     "direct_odoo_write": false,
