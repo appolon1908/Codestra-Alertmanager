@@ -114,6 +114,16 @@ def main() -> None:
     ):
         fail("Middleware contract must forbid automatic business-system mutation")
     transport = contract.get("transport", {})
+    migration = contract.get("canonical_route_migration", {})
+    if migration != {
+        "target_path": "/internal/v1/alerts/alertmanager",
+        "retained_path": "/v1/integrations/alertmanager/events",
+        "receiver_repository": "appolon1908-hue/Middleware-",
+        "activation": "REQUIRES_RECEIVER_DEPLOYMENT_AND_PRIVATE_SMOKE",
+        "same_authentication_and_incident_store": True,
+        "public_gateway_exposure": False,
+    }:
+        fail("canonical route migration must retain authentication, replay and private exposure")
     if transport.get("url_source") != "/run/secrets/middleware-alert-webhook-url":
         fail("Middleware webhook URL must come from the runtime secret file")
     if transport.get("authorization_source") != "/run/secrets/middleware-alert-webhook-token":
