@@ -5,10 +5,10 @@
   "artifactType": "application/vnd.codestra.alertmanager.config.v1+tar",
   "productionActivation": false,
   "files": {
-    "codestra/alertmanager.yml": "1ba564508d42c523eee3688f7e6c908433522e5a26e18264245ef96c0161f821",
-    "codestra/alert-routing-policy.json": "e03177a922222113bd0ad2e131412b3454c0bed0b4f927fb619b8f08787544ab",
-    "codestra/middleware-alert-contract.json": "786bbb23afb1796757d48002bdf207ce2c5105a4ce9079f95529a33e3e572d76",
-    "codestra/api/service-contract.v1.json": "0fdbfe27ee819decbedaf4202ea80707d1f43e2c258b8fa141a82ab350e852e1",
-    "codestra/web-config.yml": "79a14e746fee4074119b178f95c3b6709ad2551ba761a1eee5dfa2d4c11ccbc1"
+    "codestra/alertmanager.yml": "7765b1e816809dc834aa4a1522877fc3956ae124191064c2e03994e3a12306a3",
+    "codestra/alert-routing-policy.json": "4290fdaaf4ca89ca5f7a34c5ef045a741d17190d9c7ec2c53309e2e2605e9fbd",
+    "codestra/middleware-alert-contract.json": "8764cc4c9e794521f3fc42861ae6cf85b1fbacaeffe5213bf3f6f3bde73b4ea5",
+    "codestra/api/service-contract.v1.json": "4d5d61c9a953179bec04b15e8579f836ae994c78692e82fd88838140ff6464bf",
+    "codestra/web-config.yml": "d7bfe7599dfe8aeff27a83c461c016f4a0bf789b4219b04b3760a66426b3851f"
   }
 }
