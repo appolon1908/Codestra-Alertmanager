@@ -51,6 +51,76 @@ def load_json(path: Path) -> dict:
         fail(f"invalid JSON in {path.relative_to(ROOT)}: {exc}")
 
 
+SECRET_REFERENCES = ROOT / "codestra" / "secret-references.v1.json"
+SECRET_SCHEMA = ROOT / "codestra" / "contracts" / "secret-reference.v1.schema.json"
+SECRET_SCHEMA_PIN = ROOT / "codestra" / "contracts" / "secret-reference.v1.schema.sha256"
+FORBIDDEN_REFERENCE_KEYS = {
+    "value", "password", "token", "private_key", "client_secret", "secret",
+    "secret_value", "unseal_key", "recovery_key", "root_token",
+}
+
+
+def canonical_sha256(value: object) -> str:
+    import hashlib
+
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def reject_secret_material(value: object, trail: str) -> None:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if str(key).lower() in FORBIDDEN_REFERENCE_KEYS or str(key).lower().endswith(("_password", "_token", "_secret")):
+                fail(f"secret reference carries a value-bearing key at {trail}.{key}")
+            reject_secret_material(item, f"{trail}.{key}")
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            reject_secret_material(item, f"{trail}[{index}]")
+    elif isinstance(value, str) and (value.startswith("hvs.") or "PRIVATE KEY" in value):
+        fail(f"secret-shaped value at {trail}")
+
+
+def validate_secret_references(config_text: str) -> None:
+    """The webhook bearer is an OpenBao secret reference; the file in the config is only its rendering."""
+    schema = load_json(SECRET_SCHEMA)
+    pin = SECRET_SCHEMA_PIN.read_text(encoding="utf-8").strip()
+    if canonical_sha256(schema) != pin:
+        fail("vendored secret-reference schema does not match its pin")
+    if set(schema.get("x-codestra-forbidden-keys", [])) != FORBIDDEN_REFERENCE_KEYS:
+        fail("secret-reference forbidden-key list drifted")
+    document = load_json(SECRET_REFERENCES)
+    if document.get("secretValuesIncluded") is not False or document.get("schemaSha256") != pin:
+        fail("secret-references document must declare no values and bind the pinned schema")
+    if document.get("authority", {}).get("workloadIdentity") != "alertmanager":
+        fail("Alertmanager reads OpenBao only as the alertmanager workload identity")
+    reject_secret_material(document, "secret-references")
+    references = document.get("references", [])
+    if not references:
+        fail("secret references are missing")
+    environments = set()
+    for index, reference in enumerate(references):
+        trail = f"references[{index}]"
+        for required in schema["required"]:
+            if required not in reference:
+                fail(f"{trail} missing {required}")
+        env = reference["environment"]
+        ref = reference["secret_ref"]
+        if reference["provider"] != "openbao" or reference["workload_identity"] != "alertmanager":
+            fail(f"{trail} must be an openbao reference readable by alertmanager")
+        if ref != f"codestra/{env}/observability/alertmanager/middleware-webhook":
+            fail(f"{trail} must reference the reviewed alertmanager webhook path for {env}")
+        if reference.get("reference_uri") != "openbao://" + ref:
+            fail(f"{trail} reference_uri must equal openbao:// + secret_ref")
+        if reference["secret_class"] not in schema["properties"]["secret_class"]["enum"]:
+            fail(f"{trail} has an unknown secret_class")
+        environments.add(env)
+    if environments != {"staging", "production"}:
+        fail("secret references must cover exactly staging and production")
+    if "/run/secrets/middleware-alert-webhook-token" not in document.get("runtimeFiles", {}):
+        fail("the rendered token file must be declared as the reference's runtime rendering")
+    if "run/secrets/middleware-alert-webhook-token" not in config_text:
+        fail("alertmanager.yml must consume the rendered token file")
+
+
 def main() -> None:
     policy = load_json(POLICY)
     contract = load_json(CONTRACT)
@@ -168,6 +238,7 @@ def main() -> None:
     if bad_hosts:
         fail(f"stale/alternate Alertmanager hostname(s): {bad_hosts}")
 
+    validate_secret_references(config)
     print("Codestra Alertmanager routing control-plane validation: PASS")
 
 

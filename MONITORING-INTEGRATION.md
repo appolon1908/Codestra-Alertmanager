@@ -16,3 +16,10 @@ The release controller mounts reviewed configuration and artifacts in Middleware
 Keep native backends private. Send UI reads through authenticated Middleware/BFF routes, never browser-held backend credentials. Use release-mounted secrets, approved targets/query templates, tenant and campaign scopes, and structured redacted telemetry. Service registration, green CI and successful ingestion are distinct from verified production coverage.
 
 Acceptance requires the exact source CI result, approved immutable release, registered service/endpoint contracts, fresh telemetry, private authentication, a synthetic alert and recovery evidence. Production activation remains separate. This commit adds the repository's design/onboarding record; it does not instrument or deploy its application.
+
+## OpenBao and the durable incident path (2026-09-16)
+
+- Every receiver still posts to Middleware only (`url_file` + `credentials_file`). The bearer is now declared as an OpenBao secret reference in `codestra/secret-references.v1.json` (`codestra/<environment>/observability/alertmanager/middleware-webhook`, identity `alertmanager`, validated against the vendored `codestra/contracts/secret-reference.v1.schema.json`); the file under `/run/secrets` is only its agent rendering and nothing is committed.
+- Middleware deduplicates by fingerprint and idempotency key: a repeated delivery returns the same incident (`duplicate: true`) and never creates a second one. Suppression state is reconciled separately through `POST /v1/integrations/alertmanager/status-events`; incidents are read and acknowledged/resolved/reopened only through `/v1/observability/incidents/*`.
+- Inhibition rules cover the OpenBao family (a sealed barrier or missing leader explains dependent OpenBao symptoms in the same environment) and the Middleware scrape identity. Alertmanager remains the grouping, inhibition, silence and routing authority; Prometheus the rule authority; Middleware the durable incident, audit and delivery-intent authority.
+- The Stage 6 routing matrix now also proves the OpenBao, monitor-the-monitor and TEST_SYN alerts reach their severity receivers without delivery.

@@ -14,7 +14,9 @@
     "url_source": "/run/secrets/middleware-alert-webhook-url",
     "authorization": "bearer_token_from_file",
     "authorization_source": "/run/secrets/middleware-alert-webhook-token",
-    "tls_required": true
+    "tls_required": true,
+    "authorization_secret_reference": "codestra/secret-references.v1.json",
+    "authorization_secret_authority": "openbao"
   },
   "source_payload": "prometheus_alertmanager_webhook_v4_compatible",
   "normalization": {
@@ -54,7 +56,12 @@
     "forbid_automatic_business_system_mutation"
   ],
   "idempotency_recommendation": {
-    "components": ["groupKey", "alert.fingerprint", "alert.status", "alert.startsAt"],
+    "components": [
+      "groupKey",
+      "alert.fingerprint",
+      "alert.status",
+      "alert.startsAt"
+    ],
     "require_durable_deduplication": true
   },
   "incident_fields": [
@@ -88,5 +95,20 @@
     "direct_n8n_privileged_write",
     "direct_provider_api_write",
     "trade_or_financial_mutation"
-  ]
+  ],
+  "deduplication": {
+    "middleware_fingerprint_dedup": true,
+    "repeated_delivery_creates_duplicate_incident": false,
+    "middleware_test": "appolon1908-hue/Middleware- tests/test_observability_alerts.py::test_native_webhook_derives_transport_identity_and_deduplicates"
+  },
+  "middleware_additional_paths": {
+    "status_events_path": "/v1/integrations/alertmanager/status-events",
+    "incident_read_paths": [
+      "/v1/observability/incidents",
+      "/v1/observability/incidents/{incident_id}",
+      "/v1/observability/incidents/{incident_id}/timeline",
+      "/v1/observability/incidents/{incident_id}/notification-attempts"
+    ],
+    "note": "Status-event reconciliation and incident reads reuse the same Middleware authority; the accepted protected merge pin above is unchanged."
+  }
 }

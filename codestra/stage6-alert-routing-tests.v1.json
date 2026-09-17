@@ -52,6 +52,90 @@
         "provider": "odoo"
       },
       "expected_receiver": "middleware-warning"
+    },
+    {
+      "id": "openbao-sealed",
+      "labels": {
+        "alertname": "OpenBaoSealed",
+        "severity": "critical",
+        "codestra_business": "platform",
+        "service": "openbao",
+        "environment": "staging",
+        "owner": "codestra-security"
+      },
+      "expected_receiver": "middleware-critical"
+    },
+    {
+      "id": "openbao-health-probe-latency",
+      "labels": {
+        "alertname": "OpenBaoHealthProbeLatencyHigh",
+        "severity": "warning",
+        "codestra_business": "platform",
+        "service": "openbao",
+        "environment": "staging",
+        "owner": "codestra-security"
+      },
+      "expected_receiver": "middleware-warning"
+    },
+    {
+      "id": "openbao-audit-device-failure",
+      "labels": {
+        "alertname": "OpenBaoAuditDeviceFailure",
+        "severity": "critical",
+        "codestra_business": "platform",
+        "service": "openbao",
+        "environment": "staging",
+        "owner": "codestra-security"
+      },
+      "expected_receiver": "middleware-critical"
+    },
+    {
+      "id": "middleware-metrics-scrape-failing",
+      "labels": {
+        "alertname": "CodestraMiddlewareMetricsScrapeFailing",
+        "severity": "critical",
+        "codestra_business": "platform",
+        "service": "middleware",
+        "environment": "staging",
+        "owner": "codestra-observability"
+      },
+      "expected_receiver": "middleware-critical"
+    },
+    {
+      "id": "alertmanager-incident-ingestion-stalled",
+      "labels": {
+        "alertname": "CodestraAlertmanagerIncidentIngestionStalled",
+        "severity": "critical",
+        "codestra_business": "platform",
+        "service": "middleware",
+        "environment": "staging",
+        "owner": "codestra-observability"
+      },
+      "expected_receiver": "middleware-critical"
+    },
+    {
+      "id": "log-pipeline-down",
+      "labels": {
+        "alertname": "CodestraLogPipelineDown",
+        "severity": "high",
+        "codestra_business": "platform",
+        "service": "loki",
+        "environment": "staging",
+        "owner": "codestra-observability"
+      },
+      "expected_receiver": "middleware-high"
+    },
+    {
+      "id": "test-syn-signal-missing",
+      "labels": {
+        "alertname": "CodestraTestSynCertificationSignalMissing",
+        "severity": "informational",
+        "codestra_business": "platform",
+        "service": "middleware",
+        "environment": "staging",
+        "owner": "codestra-observability"
+      },
+      "expected_receiver": "middleware-informational"
     }
   ],
   "delivery_performed": false,

@@ -16,7 +16,15 @@ EXPECTED_CASES = {
     "external-provider-failures": ("CodestraExternalProviderFailures", "critical", "middleware-critical"),
     "queue-backlog": ("CodestraQueueDepthHigh", "warning", "middleware-warning"),
     "webhook-retries": ("CodestraWebhookRetriesElevated", "warning", "middleware-warning"),
+    "openbao-sealed": ("OpenBaoSealed", "critical", "middleware-critical"),
+    "openbao-health-probe-latency": ("OpenBaoHealthProbeLatencyHigh", "warning", "middleware-warning"),
+    "openbao-audit-device-failure": ("OpenBaoAuditDeviceFailure", "critical", "middleware-critical"),
+    "middleware-metrics-scrape-failing": ("CodestraMiddlewareMetricsScrapeFailing", "critical", "middleware-critical"),
+    "alertmanager-incident-ingestion-stalled": ("CodestraAlertmanagerIncidentIngestionStalled", "critical", "middleware-critical"),
+    "log-pipeline-down": ("CodestraLogPipelineDown", "high", "middleware-high"),
+    "test-syn-signal-missing": ("CodestraTestSynCertificationSignalMissing", "informational", "middleware-informational"),
 }
+ALLOWED_TEST_BUSINESSES = {"codestra", "platform"}
 REQUIRED_LABELS = {"alertname", "severity", "codestra_business", "service", "environment", "owner"}
 LABEL_NAME = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
 LABEL_VALUE = re.compile(r"[A-Za-z0-9._:/-]+")
@@ -68,8 +76,8 @@ def validate_matrix(value: dict) -> list[dict]:
             fail(f"alert identity mismatch for {case_id}")
         if case.get("expected_receiver") != expected_receiver:
             fail(f"receiver mismatch for {case_id}")
-        if labels["environment"] != "staging" or labels["codestra_business"] != "codestra":
-            fail(f"non-staging or non-Codestra test labels for {case_id}")
+        if labels["environment"] != "staging" or labels["codestra_business"] not in ALLOWED_TEST_BUSINESSES:
+            fail(f"non-staging or non-Codestra/platform test labels for {case_id}")
     if seen != set(EXPECTED_CASES):
         fail("required cases are incomplete")
     return cases
