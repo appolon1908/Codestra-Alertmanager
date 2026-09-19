@@ -36,9 +36,11 @@ jobs:
         run: |
           python3 -m py_compile \
             scripts/validate_codestra_alertmanager.py \
-            scripts/test_stage6_alert_routing.py
+            scripts/test_stage6_alert_routing.py \
+            scripts/validate_middleware_v3_incident_ingress.py
           python3 scripts/validate_codestra_alertmanager.py
           python3 scripts/test_stage6_alert_routing.py
+          python3 scripts/validate_middleware_v3_incident_ingress.py
 
       - name: Build pinned upstream amtool
         working-directory: upstream

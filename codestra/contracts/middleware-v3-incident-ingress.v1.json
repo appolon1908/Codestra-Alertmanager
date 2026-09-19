@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "middleware-v3-incident-ingress",
+  "lane": "E",
+  "status": "PREPARED_DISABLED",
+  "activation_enabled": false,
+  "provider_effects_enabled": false,
+  "purpose": "Prometheus -> Alertmanager -> authenticated Middleware incident ingress. Alertmanager only notifies; Middleware owns incident and control state. One alert fingerprint is one incident; repeated firing notifications never create a second incident.",
+  "middleware": {
+    "repository": "appolon1908-hue/Middleware-",
+    "prep_base_sha": "22d023a9c65b0789a0f7ee6c28548753521a9eff",
+    "v3_final_sha": "PENDING",
+    "repin_required_after_v3_merge": true,
+    "v3_candidate_observed": {
+      "branch": "mission/middleware-v3-command-kernel-20260919",
+      "sha": "1acb2ae",
+      "authority": "informational only; unmerged, owned by the Middleware V3 session"
+    }
+  },
+  "path": [
+    "Codestra-Prometheus (rules)",
+    "Codestra-Alertmanager (routing, grouping, inhibition)",
+    "Middleware incident ingress (durable incident authority)"
+  ],
+  "ingress": {
+    "canonical_path": "/v1/integrations/alertmanager/events",
+    "dedicated_runtime_path": "/internal/v1/alerts/alertmanager (app.observability_alerts, private host middleware-observability-alerts.internal.codestra.co)",
+    "status_reconciliation_path": "/v1/integrations/alertmanager/status-events",
+    "method": "POST",
+    "content_type": "application/json (exact; anything else is rejected)",
+    "url_source": "/run/secrets/middleware-alert-webhook-url (non-secret private URL, deployment-provided)",
+    "tls_required": true,
+    "public_exposure": false,
+    "openapi_at_prep_base": "contracts/observability/alert-api.v1.openapi.yaml"
+  },
+  "authentication": {
+    "scheme": "Bearer JWT (Keycloak client_credentials)",
+    "issuer_exact": "https://auth.codestra.co/realms/codestra",
+    "audience_exact": "middleware-api",
+    "client_exact": "alertmanager (azp)",
+    "scope_exact": {
+      "command": "alerts.write",
+      "status": "alerts.read"
+    },
+    "maximum_token_lifetime_seconds": 300,
+    "token_exchange": false,
+    "original_bearer_required": true,
+    "credentials_source": "/run/secrets/middleware-alert-webhook-token (OpenBao-rendered; secret_ref codestra/<env>/observability/alertmanager/middleware-webhook, class api_token)",
+    "middleware_registry": "config/control-plane-callers.v1.json -> callers.alertmanager {command_scope alerts.write, status_scope alerts.read}",
+    "caller_enforcement": "app/observability_alerts.py authorize(): X-Tenant-ID must equal the fixed policy tenant, azp must be alertmanager, scope verified, token subject required"
+  },
+  "required_headers": {
+    "Authorization": "Bearer <token>",
+    "Content-Type": "application/json",
+    "X-Tenant-ID": "codestra-platform (fixed policy tenant; any other value is 403)",
+    "X-Correlation-ID": "1..180 chars, required; echoed into the incident timeline",
+    "Idempotency-Key": "8..180 chars matching ^[A-Za-z0-9][A-Za-z0-9_.:/-]{7,179}$; stable per notification so a retry replays",
+    "X-Source-Deployment": "3..128 chars identifying the Alertmanager deployment",
+    "X-Alertmanager-Webhook": "v4 for the native webhook payload (up to 100 alerts); absent for the canonical single-alert envelope"
+  },
+  "request_bounds": {
+    "body_bytes_maximum": "policy.max_body_bytes (config/observability-alert-policy.v1.json); Content-Length and the streamed body are both bounded before parsing",
+    "native_alerts_per_request_maximum": 100,
+    "canonical_alerts_per_request": 1,
+    "groupKey_max_length": 2048,
+    "fingerprint_max_length": 128,
+    "externalURL_generatorURL_max_length": 2048,
+    "alertmanager_receiver_max_alerts": 100,
+    "alertmanager_receiver_timeout": "10s"
+  },
+  "idempotency_and_dedupe": {
+    "request_identity": "sha256(client_id \\n Idempotency-Key \\n alert.fingerprint) - an exact replay answers 200 with the stored result",
+    "incident_identity": "uuid5(https://operations.codestra.co/observability/incidents/<tenant_id>/<fingerprint>) - deterministic per (tenant, fingerprint)",
+    "ONE_ALERT_FINGERPRINT_ONE_INCIDENT": "PASS (structural: the incident id is a pure function of tenant + fingerprint; repeated firing notifications update the same incident and are reported result=duplicate)",
+    "middleware_evidence": "app/observability_incidents.py incident_identity(), request_identity(); tests/test_observability_alerts.py::test_native_webhook_derives_transport_identity_and_deduplicates",
+    "metric": "codestra_observability_incident_events_total{result=\"accepted\"|\"duplicate\"}",
+    "repeat_interval_effect": "Alertmanager repeat_interval re-sends firing groups (15m critical .. 12h informational); each re-send is a duplicate delivery, never a new incident"
+  },
+  "response_codes": {
+    "202": "new durable operations accepted",
+    "200": "exact idempotent replay",
+    "207": "native batch accepted with explicit per-alert failures",
+    "400": "schema, header or bound violation (not retryable with the same payload)",
+    "401": "authentication failed (rotate the token, then retry)",
+    "403": "tenant or scope mismatch (not retryable)",
+    "409": "idempotency conflict: same key, different payload (not retryable)",
+    "503": "durable dependency unavailable (retry with the same Idempotency-Key)"
+  },
+  "safe_retry": {
+    "alertmanager_behaviour": "webhook notifier retries on 5xx and network errors with backoff inside group_interval; the same alert group is re-sent unchanged",
+    "idempotency_guarantee": "a retried delivery carries the same fingerprint set; Middleware answers 200/duplicate instead of creating incidents",
+    "never_retry_on": [
+      "400",
+      "403",
+      "409"
+    ],
+    "retry_on": [
+      "503",
+      "network timeout"
+    ],
+    "correlation": "X-Correlation-ID is preserved across retries so the incident timeline shows one delivery chain"
+  },
+  "incident_lifecycle": {
+    "lane_e_states": [
+      "OPEN",
+      "ACK",
+      "RESOLVED",
+      "SUPPRESSED"
+    ],
+    "middleware_states_at_prep_base": [
+      "firing",
+      "acknowledged",
+      "resolved",
+      "inhibited",
+      "silenced"
+    ],
+    "mapping": {
+      "OPEN": "firing (alert status=firing accepted)",
+      "ACK": "acknowledged (POST /v1/observability/incidents/{id}/acknowledge by observability-operator, scope observability.incidents.write)",
+      "RESOLVED": "resolved (alert status=resolved, or POST .../resolve by the operator; reopen returns to firing)",
+      "SUPPRESSED": "inhibited | silenced (POST /v1/integrations/alertmanager/status-events snapshot: silencedBy / inhibitedBy)"
+    },
+    "transitions_owned_by": "Middleware only; Alertmanager never mutates incident state directly"
+  },
+  "forbidden_effects_from_alertmanager": [
+    "direct_email_delivery",
+    "direct_sms_delivery",
+    "direct_voice_call",
+    "direct_odoo_write",
+    "direct_n8n_privileged_write",
+    "direct_provider_api_write",
+    "trade_or_financial_mutation",
+    "command_execution",
+    "secret_resolution"
+  ],
+  "label_policy": {
+    "safe_labels_forwarded": [
+      "alertname",
+      "severity",
+      "service",
+      "environment",
+      "host",
+      "cluster",
+      "owner",
+      "release_id",
+      "codestra_business"
+    ],
+    "safe_annotations_forwarded": [
+      "summary",
+      "description",
+      "runbook_url",
+      "dashboard_url"
+    ],
+    "never_in_labels_or_annotations": [
+      "authorization",
+      "password",
+      "secret",
+      "token",
+      "credential",
+      "private_key",
+      "api_key",
+      "access_key",
+      "session",
+      "cookie",
+      "email",
+      "phone",
+      "customer",
+      "command_id",
+      "operation_id"
+    ]
+  },
+  "v3_expectations": [
+    "The V3 kernel keeps /v1/integrations/alertmanager/events (or publishes a successor under /platform/v1) with the same headers, bounds, idempotency and fingerprint identity",
+    "The MiddlewareV3* alerts prepared in Codestra-Prometheus route through the existing severity receivers unchanged",
+    "Incident state stays a Middleware projection; Grafana reads it through the Middleware Observability datasource",
+    "Re-pin middleware.v3_final_sha and re-run tests/test_middleware_v3_incident_ingress.py"
+  ]
+}
