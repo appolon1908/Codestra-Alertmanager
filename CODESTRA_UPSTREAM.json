@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "component": "Alertmanager",
-  "codestra_repository": "appolon1908-hue/Codestra-Alertmanager",
+  "codestra_repository": "ingtrader21-spec/Codestra-Alertmanager",
   "upstream_repository": "prometheus/alertmanager",
   "upstream_clone_url": "https://github.com/prometheus/alertmanager.git",
   "upstream_ref": "41dec65b373bc9ec38d8e02e51f790b9f71008df",

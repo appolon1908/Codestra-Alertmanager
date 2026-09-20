@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   release:
-    uses: appolon1908-hue/Codestra-Telemetry/.github/workflows/reusable-release-config-bundle.yml@777292781faeca9348d0e2ecdce6ac3f50c91d93
+    uses: ingtrader21-spec/Codestra-Telemetry/.github/workflows/reusable-release-config-bundle.yml@777292781faeca9348d0e2ecdce6ac3f50c91d93
     with:
       component_id: alertmanager
       release_tag: ${{ inputs.release_tag }}

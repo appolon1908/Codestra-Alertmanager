@@ -5,12 +5,12 @@
   "purpose": "central_alert_routing_only",
   "runtime_status": "SOURCE_PREPARED_NOT_DEPLOYED",
   "authorities": {
-    "metrics_source": "appolon1908-hue/Codestra-Prometheus",
-    "dashboard_consumer": "appolon1908-hue/Codestra-Grafana-",
-    "cross_system_write_authority": "appolon1908-hue/Middleware-",
-    "orchestration": "appolon1908-hue/N8N",
-    "crm_incident_state": "appolon1908-hue/Odoo",
-    "architecture_coordination": "appolon1908-hue/communication-platform-"
+    "metrics_source": "ingtrader21-spec/Codestra-Prometheus",
+    "dashboard_consumer": "ingtrader21-spec/Codestra-Grafana-",
+    "cross_system_write_authority": "ingtrader21-spec/Middleware-",
+    "orchestration": "ingtrader21-spec/N8N",
+    "crm_incident_state": "ingtrader21-spec/Odoo",
+    "architecture_coordination": "ingtrader21-spec/communication-platform-"
   },
   "routing": {
     "group_by": [

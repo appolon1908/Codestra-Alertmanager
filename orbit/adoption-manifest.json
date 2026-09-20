@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.0.0",
-  "repository": "appolon1908-hue/Codestra-Alertmanager",
+  "repository": "ingtrader21-spec/Codestra-Alertmanager",
   "classification": "vendor-operator-ui",
   "targetBranch": "feature/codestra-orbit-v2-codestra-alertmanager",
   "adoptionMode": "operator-theme-sso",

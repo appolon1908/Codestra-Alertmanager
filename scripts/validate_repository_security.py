@@ -64,7 +64,7 @@ def validate_upstream(
 ) -> None:
     expected = {
         "component": "Alertmanager",
-        "codestra_repository": "appolon1908-hue/Codestra-Alertmanager",
+        "codestra_repository": "ingtrader21-spec/Codestra-Alertmanager",
         "upstream_repository": "prometheus/alertmanager",
         "upstream_clone_url": "https://github.com/prometheus/alertmanager.git",
         "import_path": "upstream",
