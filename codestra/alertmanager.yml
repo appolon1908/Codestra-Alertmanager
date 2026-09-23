@@ -87,6 +87,32 @@ inhibit_rules:
       - service
       - environment
 
+  # OpenBao: a sealed barrier explains every dependent OpenBao symptom in that
+  # environment; a leaderless cluster explains the health-probe failure. The
+  # sealed alert itself is never inhibited and never triggers an unseal.
+  - source_matchers:
+      - alertname = "OpenBaoSealed"
+    target_matchers:
+      - alertname =~ "OpenBaoHealthProbeFailure|OpenBaoNoActiveLeader|OpenBaoAuditDeviceSilent|OpenBaoHealthProbeLatencyHigh"
+    equal:
+      - environment
+
+  - source_matchers:
+      - alertname = "OpenBaoNoActiveLeader"
+    target_matchers:
+      - alertname =~ "OpenBaoHealthProbeFailure|OpenBaoHealthProbeLatencyHigh"
+    equal:
+      - environment
+
+  # A failing monitoring-readonly scrape of Middleware explains missing
+  # Middleware-derived signals; it never silences the incident-ingestion alert.
+  - source_matchers:
+      - alertname = "CodestraMiddlewareMetricsScrapeFailing"
+    target_matchers:
+      - alertname = "CodestraTestSynCertificationSignalMissing"
+    equal:
+      - environment
+
 receivers:
   - name: middleware-default
     webhook_configs:
