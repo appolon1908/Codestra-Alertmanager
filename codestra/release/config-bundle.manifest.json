@@ -1,14 +1,14 @@
 {
   "schemaVersion": "1.0.0",
   "component": "alertmanager",
-  "repository": "appolon1908-hue/Codestra-Alertmanager",
+  "repository": "ingtrader21-spec/Codestra-Alertmanager",
   "artifactType": "application/vnd.codestra.alertmanager.config.v1+tar",
   "productionActivation": false,
   "files": {
     "codestra/alertmanager.yml": "7765b1e816809dc834aa4a1522877fc3956ae124191064c2e03994e3a12306a3",
-    "codestra/alert-routing-policy.json": "4290fdaaf4ca89ca5f7a34c5ef045a741d17190d9c7ec2c53309e2e2605e9fbd",
-    "codestra/middleware-alert-contract.json": "8764cc4c9e794521f3fc42861ae6cf85b1fbacaeffe5213bf3f6f3bde73b4ea5",
-    "codestra/api/service-contract.v1.json": "4d5d61c9a953179bec04b15e8579f836ae994c78692e82fd88838140ff6464bf",
+    "codestra/alert-routing-policy.json": "2e5f3a8c3a8eb18c257ea0aa80c7aef9888d16e75c9731a475d5138365dc53f4",
+    "codestra/middleware-alert-contract.json": "88ea457bb7cc6cb1dce1e384695c8a2f051c51959bef912f6715d2c433b892d6",
+    "codestra/api/service-contract.v1.json": "ac94b706f0d8865f2451d15aca17b8c9f812860829261b61fb4798553acf2c02",
     "codestra/web-config.yml": "d7bfe7599dfe8aeff27a83c461c016f4a0bf789b4219b04b3760a66426b3851f"
   }
 }

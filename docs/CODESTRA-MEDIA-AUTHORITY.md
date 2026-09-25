@@ -1,6 +1,6 @@
 # Codestra Alertmanager Authority
 
-Principal repository: `appolon1908-hue/Codestra-Alertmanager`
+Principal repository: `ingtrader21-spec/Codestra-Alertmanager`
 Canonical service host: `aler.codestra.media`
 Canonical DNS target: `37.27.128.39`
 

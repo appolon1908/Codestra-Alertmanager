@@ -151,7 +151,7 @@ def main() -> None:
     )
     release_job = release_caller.get("jobs", {}).get("release", {})
     expected_authority = (
-        "appolon1908-hue/Codestra-Telemetry/.github/workflows/"
+        "ingtrader21-spec/Codestra-Telemetry/.github/workflows/"
         "reusable-release-config-bundle.yml@"
         "777292781faeca9348d0e2ecdce6ac3f50c91d93"
     )
