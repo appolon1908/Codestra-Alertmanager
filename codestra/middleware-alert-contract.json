@@ -54,7 +54,12 @@
     "forbid_automatic_business_system_mutation"
   ],
   "idempotency_recommendation": {
-    "components": ["groupKey", "alert.fingerprint", "alert.status", "alert.startsAt"],
+    "components": [
+      "groupKey",
+      "alert.fingerprint",
+      "alert.status",
+      "alert.startsAt"
+    ],
     "require_durable_deduplication": true
   },
   "incident_fields": [
@@ -88,5 +93,17 @@
     "direct_n8n_privileged_write",
     "direct_provider_api_write",
     "trade_or_financial_mutation"
-  ]
+  ],
+  "kyyow_observability_projection": {
+    "contract_authority": {
+      "repository": "appolon1908-hue/Middleware-",
+      "path": "contracts/observability/odoo-sync.v1.json"
+    },
+    "middleware_alertmanager_endpoint": "/v1/integrations/alertmanager/events",
+  "middleware_projection_endpoint": "/v1/observability/incidents",
+    "incident_identity": "incident_id + resource_version",
+    "send_resolved": true,
+    "direct_odoo_write": false,
+    "odoo_write_authority": "Middleware Odoo result worker"
+  }
 }
