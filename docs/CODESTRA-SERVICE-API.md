@@ -4,7 +4,7 @@ This repository owns the **middleware-governed-alert-routing-authority** for the
 
 ## Communication rule
 
-Alertmanager keeps its native API and protocol. The shared Codestra control plane in `appolon1908-hue/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies native query bodies, ingestion, alert delivery, dashboard mutations, secret values, or credential issuance.
+Alertmanager keeps its native API and protocol. The shared Codestra control plane in `ingtrader21-spec/Codestra-Telemetry` performs only sanitized health, readiness, contract, topology, and immutable-release read-back. It never proxies native query bodies, ingestion, alert delivery, dashboard mutations, secret values, or credential issuance.
 
 Canonical hostname: `aler.codestra.media`
 
@@ -47,7 +47,7 @@ The control plane reads source revision and image digest only from deployment en
 
 ## Contract authority handoff
 
-- Canonical schema repository: `appolon1908-hue/Codestra-Telemetry`
+- Canonical schema repository: `ingtrader21-spec/Codestra-Telemetry`
 - Canonical merged Telemetry SHA: `c35d880a730ca5206d445e8a9a688cb465ae2ad4`
 - Contract version: `1.0.0`
 - Downstream exact head: this PR branch commit; the authoritative literal SHA is the GitHub PR `headRefOid` recorded after this handoff commit.

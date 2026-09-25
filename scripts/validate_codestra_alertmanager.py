@@ -103,7 +103,7 @@ def main() -> None:
         fail("Middleware contract must not claim a live/proven endpoint")
     authority = contract.get("middleware_source_authority", {})
     if authority != {
-        "repository": "appolon1908-hue/Middleware-",
+        "repository": "ingtrader21-spec/Middleware-",
         "protected_branch": "main",
         "protected_merge_sha": "65b8e511a412c4ba922876e906f95b9f2e4277a1",
         "canonical_path": "/v1/integrations/alertmanager/events",

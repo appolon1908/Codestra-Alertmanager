@@ -2,7 +2,7 @@
 
 ## Identity and authority
 
-- Repository: `appolon1908-hue/Codestra-Alertmanager`
+- Repository: `ingtrader21-spec/Codestra-Alertmanager`
 - Component ID: `alertmanager`
 - Principal purpose: alert grouping, deduplication, inhibition, silencing and Middleware-only routing
 - Non-goals: alert evaluation, direct provider delivery, business mutations and public native API access
