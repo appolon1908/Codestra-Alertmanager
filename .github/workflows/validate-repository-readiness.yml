@@ -62,3 +62,22 @@ jobs:
           python3 scripts/validate_codestra_alertmanager.py
           python3 scripts/validate_repository_readiness.py
           python3 -m unittest discover -s tests -p 'test_*.py'
+
+  readiness-source-gate:
+    name: codestra/alertmanager-readiness
+    if: always()
+    needs: [validate-source, validate-merge-result]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Require every source validation job to succeed
+        env:
+          RESULT_0: ${{ needs.validate-source.result }}
+          RESULT_1: ${{ needs.validate-merge-result.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESULT_0" = success
+          test "$RESULT_1" = success
