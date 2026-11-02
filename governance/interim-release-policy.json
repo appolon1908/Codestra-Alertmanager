@@ -5,12 +5,12 @@
   "authorization_date": "2026-11-02",
   "required_checks": [
     {
-      "context": "validate-source",
+      "context": "codestra/alertmanager-source-authority",
       "integration_id": 15368,
       "workflow": ".github/workflows/validate.yml"
     },
     {
-      "context": "validate-merge-result",
+      "context": "codestra/alertmanager-readiness",
       "integration_id": 15368,
       "workflow": ".github/workflows/validate-repository-readiness.yml"
     },
@@ -40,5 +40,5 @@
     "deployment_authority"
   ],
   "production_activation_authorized": false,
-  "note": "GitHub rulesets remain the enforcement authority. This source-validation policy is not custom-controller certification or deployment authorization. The validate-source context is emitted by both validate.yml and validate-repository-readiness.yml; all matching runs must pass."
+  "note": "GitHub rulesets remain the enforcement authority. This source-validation policy is not custom-controller certification or deployment authorization."
 }

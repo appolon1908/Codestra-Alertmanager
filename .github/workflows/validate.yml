@@ -142,3 +142,20 @@ jobs:
           fi
           scripts/reject_repository_secrets.sh --git-range "$base_sha" "$GITHUB_SHA"
           git diff --check "$base_sha" "$GITHUB_SHA" -- . ':(exclude)upstream'
+
+  source-authority-gate:
+    name: codestra/alertmanager-source-authority
+    if: always()
+    needs: [validate-source]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    steps:
+      - name: Require every source validation job to succeed
+        env:
+          RESULT_0: ${{ needs.validate-source.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$RESULT_0" = success
