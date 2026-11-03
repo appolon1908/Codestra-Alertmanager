@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import os
 import subprocess
 import tempfile
@@ -18,6 +19,23 @@ SPEC = importlib.util.spec_from_file_location(
 assert SPEC and SPEC.loader
 VALIDATOR = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(VALIDATOR)
+
+
+def scanner_command(scanner: Path, *args: object) -> list[str]:
+    values = [str(value) for value in args]
+    if os.name == "nt":
+        bash = shutil.which("bash")
+        if bash is None:
+            raise unittest.SkipTest("a POSIX bash runtime is required for repository secret-scanner tests")
+        probe = subprocess.run(
+            [bash, "-lc", "exit 0"], check=False, capture_output=True
+        )
+        if probe.returncode != 0:
+            raise unittest.SkipTest(
+                "the available bash runtime cannot execute POSIX repository scanner tests"
+            )
+        return [bash, str(scanner), *values]
+    return [str(scanner), *values]
 
 
 class RepositorySecurityTests(unittest.TestCase):
@@ -158,7 +176,7 @@ class RepositorySecurityTests(unittest.TestCase):
             scan_root = Path(directory)
             (scan_root / "clean.txt").write_text("no credential material\n")
             clean = subprocess.run(
-                [scanner, scan_root], check=False, capture_output=True, text=True
+                scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
             )
             self.assertEqual(clean.returncode, 0)
 
@@ -167,7 +185,7 @@ class RepositorySecurityTests(unittest.TestCase):
             secret = "CLIENT" + "_SECRET = " + ("A" * 24) + "\n"
             (ignored_root / "credential.txt").write_text(secret)
             ignored = subprocess.run(
-                [scanner, scan_root], check=False, capture_output=True, text=True
+                scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
             )
             self.assertEqual(ignored.returncode, 0)
 
@@ -175,7 +193,7 @@ class RepositorySecurityTests(unittest.TestCase):
             nested.mkdir(parents=True)
             (nested / "credential.txt").write_text(secret)
             found = subprocess.run(
-                [scanner, scan_root], check=False, capture_output=True, text=True
+                scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
             )
             self.assertEqual(found.returncode, 1)
             (nested / "credential.txt").unlink()
@@ -183,7 +201,7 @@ class RepositorySecurityTests(unittest.TestCase):
             binary_secret = scan_root / "nul-prefixed-credential.txt"
             binary_secret.write_bytes(b"\0unrelated\n" + secret.encode())
             binary_found = subprocess.run(
-                [scanner, scan_root], check=False, capture_output=True, text=True
+                scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
             )
             self.assertEqual(binary_found.returncode, 1)
             binary_secret.unlink()
@@ -230,7 +248,7 @@ class RepositorySecurityTests(unittest.TestCase):
                 serialized = scan_root / "serialized-credential.txt"
                 serialized.write_text(serialized_secret)
                 serialized_found = subprocess.run(
-                    [scanner, scan_root], check=False, capture_output=True, text=True
+                    scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
                 )
                 self.assertEqual(serialized_found.returncode, 1)
                 serialized.unlink()
@@ -245,14 +263,14 @@ class RepositorySecurityTests(unittest.TestCase):
                     + " KEY-----\nfixture\n"
                 )
                 private_key_found = subprocess.run(
-                    [scanner, scan_root], check=False, capture_output=True, text=True
+                    scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
                 )
                 self.assertEqual(private_key_found.returncode, 1)
                 private_key.unlink()
 
             os.symlink(scan_root / "missing-target", scan_root / "dangling")
             failed = subprocess.run(
-                [scanner, scan_root], check=False, capture_output=True, text=True
+                scanner_command(scanner, scan_root), check=False, capture_output=True, text=True
             )
             self.assertGreater(failed.returncode, 1)
 
@@ -295,11 +313,11 @@ class RepositorySecurityTests(unittest.TestCase):
             ).strip()
 
             final_tree = subprocess.run(
-                [scanner, repository], check=False, capture_output=True, text=True
+                scanner_command(scanner, repository), check=False, capture_output=True, text=True
             )
             self.assertEqual(final_tree.returncode, 0)
             history = subprocess.run(
-                [scanner, "--git-range", base_sha, head_sha],
+                scanner_command(scanner, "--git-range", base_sha, head_sha),
                 cwd=repository,
                 check=False,
                 capture_output=True,

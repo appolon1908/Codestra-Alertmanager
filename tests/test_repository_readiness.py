@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -14,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class RepositoryReadinessTests(unittest.TestCase):
     def test_validator_passes(self) -> None:
         subprocess.run(
-            ["python3", "scripts/validate_repository_readiness.py"],
+            [sys.executable, "scripts/validate_repository_readiness.py"],
             cwd=ROOT,
             check=True,
         )
@@ -25,7 +26,7 @@ class RepositoryReadinessTests(unittest.TestCase):
             second = Path(directory) / "second.tar.gz"
             for output in (first, second):
                 subprocess.run(
-                    ["python3", "scripts/build_config_bundle.py", "--output", str(output)],
+                    [sys.executable, "scripts/build_config_bundle.py", "--output", str(output)],
                     cwd=ROOT,
                     check=True,
                 )
