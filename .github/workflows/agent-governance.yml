@@ -1,0 +1,18 @@
+name: Agent governance guard
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+      - master
+permissions:
+  contents: read
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail closed unless lane authority is active
+        run: bash scripts/agent_preflight.sh --ci

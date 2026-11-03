@@ -1,0 +1,12 @@
+version: 1
+repository: Codestra-Alertmanager
+repository_url: https://github.com/ingtrader21-spec/Codestra-Alertmanager.git
+canonical_path: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-Alertmanager
+active_worktree: /home/codestra/Worktrees/Monitoring-Active-20260926/Codestra-Alertmanager
+active_branch: governance/single-active-lane-20260926
+base_branch: main
+base_sha: c6de0a0d7d75d8d0d8a48e1296eeab2963dc5a99
+upstream_ref: origin/main
+publication_branch: governance/single-active-lane-20260926
+production_effects_allowed: false
+certification_mode: isolated_exact_sha
